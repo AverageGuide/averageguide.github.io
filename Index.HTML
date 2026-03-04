@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Voting OSIS Modern Pro</title>
+    <style>
+        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; user-select: none; color: var(--text); }
+        .container { background: white; padding: 2.5rem; border-radius: 1.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; max-width: 1100px; width: 95%; margin: 20px; }
+        h1 { font-size: 2.2rem; margin-bottom: 0.5rem; cursor: pointer; transition: 0.2s; }
+        .subtitle { color: #64748b; margin-bottom: 2.5rem; }
+        .paslon-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+        .card { background: white; border: 2px solid #e2e8f0; border-radius: 1.2rem; padding: 1.2rem; transition: all 0.3s ease; cursor: default; position: relative; display: flex; flex-direction: column; }
+        .card:hover { border-color: var(--primary); transform: translateY(-5px); box-shadow: 0 12px 20px rgba(37, 99, 235, 0.1); }
+        .card img { width: 100%; height: 320px; object-fit: cover; border-radius: 0.8rem; margin-bottom: 1rem; }
+        .card-no { position: absolute; top: 15px; left: 15px; background: var(--primary); color: white; padding: 0.3rem 1rem; border-radius: 2rem; font-weight: bold; }
+        .details-container { text-align: left; margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px; flex-grow: 1; }
+        details summary { cursor: pointer; font-weight: 600; color: var(--primary); outline: none; padding: 5px 0; }
+        details p { font-size: 0.9rem; color: #475569; line-height: 1.5; margin-top: 8px; }
+        .btn-pilih { background: var(--primary); color: white; border: none; padding: 0.9rem; border-radius: 0.8rem; font-weight: 600; width: 100%; margin-top: 1.5rem; cursor: pointer; transition: 0.2s; }
+        .btn-pilih:hover { background: #1d4ed8; }
+        #status-info { margin-top: 1.5rem; font-size: 0.9rem; color: #ef4444; min-height: 1.2rem; }
+        .error-page { text-align: left; font-family: monospace; padding: 2rem; background: #fff; height: 100vh; width: 100vw; position: fixed; top:0; left:0; z-index: 9999; }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+<div id="app-content" class="container">
+    <h1 id="main-title" onclick="handleTitleClick()">E-VOTING OSIS</h1>
+    <p class="subtitle">Sistem Pemilihan Berbasis Digital - Jujur & Adil.</p>
+
+    <div class="paslon-grid">
+        <div class="card">
+            <div class="card-no">01</div>
+            <img src="foto1.jpg" alt="Paslon 01"> <h3>Kandidat Pertama</h3>
+            <div class="details-container">
+                <details>
+                    <summary>Visi & Misi</summary>
+                    <p><strong>Visi:</strong> Contoh Visi Paslon 1.<br><strong>Misi:</strong> Contoh Misi Paslon 1.</p>
+                </details>
+            </div>
+            <button class="btn-pilih" onclick="pilihPaslon('01')">Pilih Kandidat</button>
+        </div>
+
+        <div class="card">
+            <div class="card-no">02</div>
+            <img src="foto2.jpg" alt="Paslon 02"> <h3>Kandidat Kedua</h3>
+            <div class="details-container">
+                <details>
+                    <summary>Visi & Misi</summary>
+                    <p><strong>Visi:</strong> Contoh Visi Paslon 2.<br><strong>Misi:</strong> Contoh Misi Paslon 2.</p>
+                </details>
+            </div>
+            <button class="btn-pilih" onclick="pilihPaslon('02')">Pilih Kandidat</button>
+        </div>
+
+        <div class="card">
+            <div class="card-no">03</div>
+            <img src="foto3.jpg" alt="Paslon 03"> <h3>Kandidat Ketiga</h3>
+            <div class="details-container">
+                <details>
+                    <summary>Visi & Misi</summary>
+                    <p><strong>Visi:</strong> Contoh Visi Paslon 3.<br><strong>Misi:</strong> Contoh Misi Paslon 3.</p>
+                </details>
+            </div>
+            <button class="btn-pilih" onclick="pilihPaslon('03')">Pilih Kandidat</button>
+        </div>
+    </div>
+    <div id="status-info"></div>
+</div>
+
+<script>
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbzD3zmoaQJBslJAKmC3uFBXtWGbV9WNAYlyzljG9WO7mpDcAAXqRazPZ-ugFXPlFlHo0Q/exec'; 
+    const sheetsURL = 'https://docs.google.com/spreadsheets/d/1qMtdvUy0jW1M9kgo4LCiuVN80rIKMi72kPWLaIRokLM/edit?gid=0#gid=0';
+
+    let selectedCount = { p1: 0, p2: 0, p3: 0, title: 0 };
+    let panicCounter = 0;
+
+    // 1. DETEKSI DEVICE LENGKAP
+    function getDeviceFingerprint() {
+        const n = navigator;
+        return {
+            os: n.platform,
+            browser: n.userAgentData ? n.userAgentData.brands[0].brand : "Unknown",
+            screen: `${screen.width}x${screen.height}`,
+            lang: n.language,
+            ua: n.userAgent
+        };
+    }
+
+    // 2. MONITORING STATUS
+    async function syncSystem() {
+        try {
+            const res = await fetch(scriptURL);
+            const status = await res.text();
+            if (status === "DOWN") {
+                document.body.innerHTML = `<div class="error-page"><h2>HTTP 500: INTERNAL_SERVER_ERROR</h2><hr><p>Critical error: Connection to 'db_vote_main' failed at port 3306.</p><p>Error ID: ${Math.random().toString(36).substring(7)}</p></div>`;
+            } else if (status === "BEKU") {
+                document.getElementById('app-content').innerHTML = `<h1>🔒</h1><h2>SISTEM DIJEDA</h2><p>Pemilihan sedang dihentikan sementara oleh admin.</p>`;
+            } else if (status === "ALARM") {
+                triggerBeep();
+            }
+        } catch (e) {}
+    }
+    setInterval(syncSystem, 5000);
+
+    // 3. PROSES VOTING
+    function pilihPaslon(id) {
+        if (id === '01') selectedCount.p1++;
+        if (id === '02') selectedCount.p2++;
+        if (id === '03') selectedCount.p3++;
+        if (confirm("Konfirmasi suara untuk Paslon Nomor " + id + "?")) executeVote(id);
+    }
+
+    async function executeVote(id) {
+        document.getElementById('status-info').innerText = "Enkripsi data & mengirim...";
+        const dev = getDeviceFingerprint();
+        
+        const payload = {
+            pilihan: "Kandidat " + id,
+            device: `${dev.os} | ${dev.screen} | ${dev.browser}`,
+            finger: dev.ua // User Agent lengkap masuk ke kolom Fingerprint
+        };
+
+        try {
+            await fetch(scriptURL, { method: 'POST', body: JSON.stringify(payload) });
+            alert("Suara berhasil direkam!");
+            location.reload();
+        } catch (e) {
+            alert("Koneksi gagal. Coba lagi.");
+        }
+    }
+
+    // 4. ADMIN PANEL RITUAL
+    function handleTitleClick() {
+        selectedCount.title++;
+        if (selectedCount.p1 >= 1 && selectedCount.p2 >= 1 && selectedCount.title >= 3) {
+            const pass = prompt("SISTEM TERKUNCI. Masukkan Kode:");
+            if (pass === "OWNER99") {
+                const opt = prompt("PANEL OWNER:\n2. TAMBAH\n3. KURANGI\n4. DATABASE");
+                if (opt === "2") adminCmd("TAMBAH", prompt("Nama Paslon:"));
+                else if (opt === "3") adminCmd("KURANGI", prompt("Nama Paslon:"));
+                else if (opt === "4") window.open(sheetsURL, "_blank");
+            }
+            selectedCount = { p1: 0, p2: 0, p3: 0, title: 0 };
+        }
+    }
+
+    async function adminCmd(t, p) {
+        await fetch(scriptURL, { method: 'POST', body: JSON.stringify({ action: "MANIPULASI", type: t, pilihan: p }) });
+        alert("Berhasil!");
+    }
+
+    // 5. PANIC MODE & ANTI-INSPECT
+    document.onkeydown = function(e) {
+        if (e.keyCode === 27) {
+            panicCounter++;
+            if (panicCounter === 3) window.location.href = "https://www.google.com";
+            setTimeout(() => { panicCounter = 0; }, 2000);
+        }
+        if(e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || (e.ctrlKey && e.keyCode == 85)) return false;
+    };
+
+    function triggerBeep() {
+        const context = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = context.createOscillator();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(1200, context.currentTime);
+        osc.connect(context.destination);
+        osc.start();
+        setTimeout(() => osc.stop(), 300);
+    }
+</script>
+</body>
+</html>
