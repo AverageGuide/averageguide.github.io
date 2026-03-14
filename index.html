@@ -3,176 +3,311 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Voting OSIS Modern Pro</title>
+    <title>Sistem E-Voting OSIS PRO</title>
     <style>
-        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; user-select: none; color: var(--text); }
-        .container { background: white; padding: 2.5rem; border-radius: 1.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; max-width: 1100px; width: 95%; margin: 20px; }
-        h1 { font-size: 2.2rem; margin-bottom: 0.5rem; cursor: pointer; transition: 0.2s; }
-        .subtitle { color: #64748b; margin-bottom: 2.5rem; }
+        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --success: #22c55e; --danger: #ef4444; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; user-select: none; color: var(--text); overscroll-behavior-y: contain; }
+
+        /* BLOCKING SYSTEM */
+        #app-content { display: none; }
+        #blocking-layer { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100vw; position: fixed; top: 0; left: 0; background: var(--bg); z-index: 9999; text-align: center; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .container { background: white; padding: 2.5rem; border-radius: 1.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.05); max-width: 1100px; width: 95%; margin: 20px; position: relative; transition: filter 0.3s; }
+        #live-clock { position: absolute; top: 15px; right: 25px; font-family: monospace; font-weight: bold; color: var(--primary); background: #eff6ff; padding: 5px 12px; border-radius: 8px; font-size: 0.9rem; }
+        .header-logo-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; margin-top: 10px; gap: 15px; }
+        .logo-header { width: 80px; height: auto; object-fit: contain; }
+        h1 { font-size: 1.8rem; margin: 0; cursor: pointer; }
+        .subtitle { color: #64748b; margin: 5px 0 0 0; }
+
         .paslon-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
-        .card { background: white; border: 2px solid #e2e8f0; border-radius: 1.2rem; padding: 1.2rem; transition: all 0.3s ease; cursor: default; position: relative; display: flex; flex-direction: column; }
-        .card:hover { border-color: var(--primary); transform: translateY(-5px); box-shadow: 0 12px 20px rgba(37, 99, 235, 0.1); }
-        .card img { width: 100%; height: 320px; object-fit: cover; border-radius: 0.8rem; margin-bottom: 1rem; }
-        .card-no { position: absolute; top: 15px; left: 15px; background: var(--primary); color: white; padding: 0.3rem 1rem; border-radius: 2rem; font-weight: bold; }
-        .details-container { text-align: left; margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px; flex-grow: 1; }
-        details summary { cursor: pointer; font-weight: 600; color: var(--primary); outline: none; padding: 5px 0; }
-        details p { font-size: 0.9rem; color: #475569; line-height: 1.5; margin-top: 8px; }
-        .btn-pilih { background: var(--primary); color: white; border: none; padding: 0.9rem; border-radius: 0.8rem; font-weight: 600; width: 100%; margin-top: 1.5rem; cursor: pointer; transition: 0.2s; }
-        .btn-pilih:hover { background: #1d4ed8; }
-        #status-info { margin-top: 1.5rem; font-size: 0.9rem; color: #ef4444; min-height: 1.2rem; }
-        .error-page { text-align: left; font-family: monospace; padding: 2rem; background: #fff; height: 100vh; width: 100vw; position: fixed; top:0; left:0; z-index: 9999; }
+        .card { background: white; border: 2px solid #e2e8f0; border-radius: 1.2rem; padding: 1.2rem; transition: 0.3s; position: relative; display: flex; flex-direction: column; }
+        .card:hover { border-color: var(--primary); transform: translateY(-5px); }
+        .card img { width: 100%; height: 320px; object-fit: cover; border-radius: 0.8rem; }
+        .card-no { position: absolute; top: 15px; left: 15px; background: var(--primary); color: white; padding: 0.3rem 1rem; border-radius: 2rem; font-weight: bold; z-index: 10; }
+
+        .details-container { text-align: left; flex-grow: 1; margin-top: 10px; border-top: 1px solid #eee; }
+        details summary { cursor: pointer; font-weight: 600; color: var(--primary); padding: 10px 0; outline: none; }
+        .visi-misi-content { padding-bottom: 10px; font-size: 0.85rem; color: #475569; line-height: 1.4; }
+
+        .loading-container { display: none; width: 100%; background: #e2e8f0; height: 8px; border-radius: 10px; margin-top: 15px; overflow: hidden; }
+        .loading-bar { width: 0%; height: 100%; background: var(--primary); transition: width 0.3s ease; }
+
+        .btn-pilih { background: var(--primary); color: white; border: none; padding: 1rem; border-radius: 0.8rem; font-weight: 600; width: 100%; margin-top: 1rem; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .btn-pilih:disabled { background: #cbd5e1; cursor: not-allowed; }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .modal-box { background: white; padding: 2.5rem; border-radius: 1.5rem; max-width: 400px; width: 85%; text-align: center; }
+        .icon-circle { width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 35px; margin: 0 auto 1.2rem; }
+        .success-bg { background: #dcfce7; color: var(--success); }
+        .error-bg { background: #fee2e2; color: var(--danger); }
     </style>
 </head>
 <body oncontextmenu="return false;">
 
+<script>
+    // --- 1. INSTANT LOCK SYSTEM (Mencegah Klik Ganda & Refresh) ---
+    (function() {
+        if (localStorage.getItem('hasVoted') === 'true') {
+            document.write(`
+                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; font-family:sans-serif; text-align:center; background:#f8fafc;">
+                    <div style="background:white; padding:3rem; border-radius:2rem; box-shadow:0 10px 30px rgba(0,0,0,0.05); max-width:85%; width:500px;">
+                        <h1 style="font-size:4rem; margin:0;">✅</h1>
+                        <h2 style="color:#1e293b; margin-top:1rem; text-transform:uppercase; letter-spacing:1px;">Akses Dibatasi</h2>
+                        <p style="color:#64748b; line-height:1.6;">Sistem mendeteksi Anda telah menggunakan hak suara di perangkat ini. Terima kasih!</p>
+                        <button onclick="location.reload()" style="margin-top:1.5rem; padding:0.8rem 2rem; border:none; background:#2563eb; color:white; border-radius:10px; cursor:pointer; font-weight:bold;">Refresh Status</button>
+                    </div>
+                </div>
+            `);
+            window.stop();
+        }
+    })();
+</script>
+
+<div id="blocking-layer">
+    <div id="status-content">
+        <div class="spinner"></div>
+        <p id="status-text">Memverifikasi Status Server SMAN 4...</p>
+    </div>
+</div>
+
 <div id="app-content" class="container">
-    <h1 id="main-title" onclick="handleTitleClick()">E-VOTING OSIS</h1>
-    <p class="subtitle">Sistem Pemilihan Berbasis Digital - Jujur & Adil.</p>
+    <div id="live-clock">00:00:00</div>
+    <div class="header-logo-container">
+        <img src="https://upload.wikimedia.org/wikipedia/id/3/39/Logo_SMAN_4_Banjarmasin.png" class="logo-header">
+        <div style="text-align: center; flex-grow: 1;">
+            <h1 id="main-title" onclick="handleTitleClick()">E-VOTING OSIS</h1>
+            <p class="subtitle">Masa Bakti 2026/2027</p>
+        </div>
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSneKihi6PAqG-wV_pL-Z6L8eR9OrNnLISB5w&s" class="logo-header">
+    </div>
 
     <div class="paslon-grid">
         <div class="card">
             <div class="card-no">01</div>
-            <img src="foto1.jpg" alt="Paslon 01"> <h3>Kandidat Pertama</h3>
-            <div class="details-container">
-                <details>
-                    <summary>Visi & Misi</summary>
-                    <p><strong>Visi:</strong> Contoh Visi Paslon 1.<br><strong>Misi:</strong> Contoh Misi Paslon 1.</p>
-                </details>
-            </div>
+            <img src="paslon1.jpg">
+            <h3 style="text-align:center">Kandidat 01</h3>
+            <div class="details-container"><details><summary>Visi & Misi</summary><div class="visi-misi-content"><strong>Visi:</strong> <p>Digitalisasi & Integritas OSIS yang transparan.</p></div></details></div>
             <button class="btn-pilih" onclick="pilihPaslon('01')">Pilih Kandidat</button>
+            <div class="loading-container" id="load-01"><div class="loading-bar" id="bar-01"></div></div>
         </div>
-
         <div class="card">
             <div class="card-no">02</div>
-            <img src="foto2.jpg" alt="Paslon 02"> <h3>Kandidat Kedua</h3>
-            <div class="details-container">
-                <details>
-                    <summary>Visi & Misi</summary>
-                    <p><strong>Visi:</strong> Contoh Visi Paslon 2.<br><strong>Misi:</strong> Contoh Misi Paslon 2.</p>
-                </details>
-            </div>
+            <img src="paslon2.jpg">
+            <h3 style="text-align:center">Kandidat 02</h3>
+            <div class="details-container"><details><summary>Visi & Misi</summary><div class="visi-misi-content"><strong>Visi:</strong> <p>Kreativitas Pelajar tanpa batas.</p></div></details></div>
             <button class="btn-pilih" onclick="pilihPaslon('02')">Pilih Kandidat</button>
+            <div class="loading-container" id="load-02"><div class="loading-bar" id="bar-02"></div></div>
         </div>
-
         <div class="card">
             <div class="card-no">03</div>
-            <img src="foto3.jpg" alt="Paslon 03"> <h3>Kandidat Ketiga</h3>
-            <div class="details-container">
-                <details>
-                    <summary>Visi & Misi</summary>
-                    <p><strong>Visi:</strong> Contoh Visi Paslon 3.<br><strong>Misi:</strong> Contoh Misi Paslon 3.</p>
-                </details>
-            </div>
+            <img src="paslon3.jpg">
+            <h3 style="text-align:center">Kandidat 03</h3>
+            <div class="details-container"><details><summary>Visi & Misi</summary><div class="visi-misi-content"><strong>Visi:</strong> <p>Integritas & Karakter SMAN 4.</p></div></details></div>
             <button class="btn-pilih" onclick="pilihPaslon('03')">Pilih Kandidat</button>
+            <div class="loading-container" id="load-03"><div class="loading-bar" id="bar-03"></div></div>
         </div>
     </div>
-    <div id="status-info"></div>
+</div>
+
+<div id="confirmModal" class="modal-overlay">
+    <div class="modal-box">
+        <h2 style="margin:0;">Konfirmasi</h2>
+        <p id="confirmText" style="color:#64748b;"></p>
+        <div style="display:flex; gap:10px; margin-top:2rem;">
+            <button onclick="closeModal('confirmModal')" style="flex:1; padding:0.8rem; border:none; background:#e2e8f0; border-radius:10px; cursor:pointer;">Batal</button>
+            <button id="confirmBtn" style="flex:1; padding:0.8rem; border:none; background:var(--primary); color:white; border-radius:10px; cursor:pointer; font-weight:bold;">Ya, Pilih!</button>
+        </div>
+    </div>
+</div>
+
+<div id="successModal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="icon-circle success-bg">✓</div>
+        <h2>Data Terkirim!</h2>
+        <p style="color:#64748b;">Suara Anda sudah berhasil direkam.</p>
+        <button onclick="location.reload()" style="margin-top:2rem; width:100%; padding:0.8rem; border:none; background:var(--success); color:white; border-radius:10px; cursor:pointer; font-weight:bold;">SELESAI</button>
+    </div>
+</div>
+
+<div id="errorModal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="icon-circle error-bg">✕</div>
+        <h2 style="color:var(--danger);">Koneksi Gagal!</h2>
+        <p style="color:#64748b;">Gagal menghubungi database. Coba lagi!</p>
+        <button onclick="location.reload()" style="margin-top:2rem; width:100%; padding:0.8rem; border:none; background:var(--danger); color:white; border-radius:10px; cursor:pointer; font-weight:bold;">COBA LAGI</button>
+    </div>
 </div>
 
 <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbzD3zmoaQJBslJAKmC3uFBXtWGbV9WNAYlyzljG9WO7mpDcAAXqRazPZ-ugFXPlFlHo0Q/exec'; 
-    const sheetsURL = 'https://docs.google.com/spreadsheets/d/1qMtdvUy0jW1M9kgo4LCiuVN80rIKMi72kPWLaIRokLM/edit?gid=0#gid=0';
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbzD3zmoaQJBslJAKmC3uFBXtWGbV9WNAYlyzljG9WO7mpDcAAXqRazPZ-ugFXPlFlHo0Q/exec';
+    const sheetsURL = 'https://docs.google.com/spreadsheets/d/1qMtdvUy0jW1M9kgo4LCiuVN80rIKMi72kPWLaIRokLM/edit';
+    let selectedCount = { p1: 0, p2: 0, title: 0 };
+    let currentSystemStatus = "";
 
-    let selectedCount = { p1: 0, p2: 0, p3: 0, title: 0 };
-    let panicCounter = 0;
-
-    // 1. DETEKSI DEVICE LENGKAP
-    function getDeviceFingerprint() {
-        const n = navigator;
-        return {
-            os: n.platform,
-            browser: n.userAgentData ? n.userAgentData.brands[0].brand : "Unknown",
-            screen: `${screen.width}x${screen.height}`,
-            lang: n.language,
-            ua: n.userAgent
-        };
+    // --- AUDIO & HAPTIC ---
+    function playSnd(freq, dur, type='sine') {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const o = ctx.createOscillator(); const g = ctx.createGain();
+        o.type = type; o.frequency.setValueAtTime(freq, ctx.currentTime);
+        g.gain.setValueAtTime(0.1, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
+        o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + dur);
     }
+    function vibrate() { if (navigator.vibrate) navigator.vibrate(50); }
 
-    // 2. MONITORING STATUS
+    // --- SYNC STATUS ---
     async function syncSystem() {
         try {
-            const res = await fetch(scriptURL);
-            const status = await res.text();
-            if (status === "DOWN") {
-                document.body.innerHTML = `<div class="error-page"><h2>HTTP 500: INTERNAL_SERVER_ERROR</h2><hr><p>Critical error: Connection to 'db_vote_main' failed at port 3306.</p><p>Error ID: ${Math.random().toString(36).substring(7)}</p></div>`;
-            } else if (status === "BEKU") {
-                document.getElementById('app-content').innerHTML = `<h1>🔒</h1><h2>SISTEM DIJEDA</h2><p>Pemilihan sedang dihentikan sementara oleh admin.</p>`;
-            } else if (status === "ALARM") {
-                triggerBeep();
-            }
-        } catch (e) {}
-    }
-    setInterval(syncSystem, 5000);
+            const res = await fetch(scriptURL + "?action=checkStatus");
+            const status = (await res.text()).trim();
+            if (status !== currentSystemStatus) {
+                currentSystemStatus = status;
+                const blocking = document.getElementById('blocking-layer');
+                const content = document.getElementById('app-content');
 
-    // 3. PROSES VOTING
+                if (status === "NORMAL" || status === "error") {
+                    blocking.style.display = "none";
+                    content.style.display = "block";
+                } else if (status === "BEKU") {
+                    blocking.style.display = "flex";
+                    blocking.innerHTML = `
+                        <div style="background:white; padding:2.5rem 3rem; border-radius:1.5rem; box-shadow:0 15px 35px rgba(0,0,0,0.05); text-align:left; width:700px; max-width:90%; display:flex; align-items:center; gap:2rem; border:1px solid rgba(0,0,0,0.05);">
+                            <div style="font-size:3.5rem;">🔒</div>
+                            <div>
+                                <h2 style="font-size:1.6rem; font-weight:800; color:#1e293b; margin:0 0 0.5rem 0; text-transform:uppercase;">Sistem Dijeda</h2>
+                                <p style="color:#64748b; margin:0; font-weight:500;">Voting ditangguhkan oleh Admin. Mohon tunggu instruksi selanjutnya.</p>
+                            </div>
+                        </div>`;
+                    content.style.display = "none";
+                } else if (status === "DOWN") {
+                    blocking.style.display = "block";
+                    blocking.innerHTML = `
+                        <div style="text-align:left; font-family:monospace; padding:2rem; background:#fff; height:100vh;">
+                            <h2 style="color:red;">HTTP 500: INTERNAL_SERVER_ERROR</h2><hr>
+                            <p>Database connection failed. Critical error at server-side script.</p>
+                            <p>Trace ID: SMAN4-VOTE-${Math.floor(Math.random()*99999)}</p>
+                        </div>`;
+                    content.style.display = "none";
+                }
+            }
+        } catch (e) { console.error("Sync Error"); }
+    }
+    syncSystem(); setInterval(syncSystem, 3000);
+
+    // --- VOTING LOGIC ---
     function pilihPaslon(id) {
-        if (id === '01') selectedCount.p1++;
-        if (id === '02') selectedCount.p2++;
-        if (id === '03') selectedCount.p3++;
-        if (confirm("Konfirmasi suara untuk Paslon Nomor " + id + "?")) executeVote(id);
+        vibrate();
+        playSnd(880, 0.1);
+        document.getElementById('confirmText').innerText = "Yakin memilih Kandidat " + id + "?";
+        document.getElementById('confirmModal').style.display = 'flex';
+        document.getElementById('confirmBtn').onclick = () => { closeModal('confirmModal'); executeVote(id); };
+        if(id === '01') selectedCount.p1++;
+        if(id === '02') selectedCount.p2++;
     }
 
     async function executeVote(id) {
-        document.getElementById('status-info').innerText = "Enkripsi data & mengirim...";
-        const dev = getDeviceFingerprint();
+    // 1. Kunci Lokal Instan
+    localStorage.setItem('hasVoted', 'true');
+    document.querySelectorAll('.btn-pilih').forEach(b => b.disabled = true);
+    document.getElementById('app-content').style.filter = "blur(5px)";
+    
+    // 2. Ambil Fingerprint Hardware & Jalankan Loading Bar
+    const fingerprint = await getAggressiveFingerprint();
+    const bar = document.getElementById('bar-' + id);
+    document.getElementById('load-' + id).style.display = 'block';
+    let prog = 0;
+    let intv = setInterval(() => { prog += 5; bar.style.width = prog + "%"; if(prog >= 90) clearInterval(intv); }, 100);
+
+    try {
+        const response = await fetch(scriptURL, { 
+            method: 'POST', 
+            body: JSON.stringify({ 
+                pilihan: "Paslon " + id, 
+                fingerprint: fingerprint,
+                user_agent: navigator.userAgent
+            }) 
+        });
         
-        const payload = {
-            pilihan: "Kandidat " + id,
-            device: `${dev.os} | ${dev.screen} | ${dev.browser}`,
-            finger: dev.ua // User Agent lengkap masuk ke kolom Fingerprint
-        };
+        const result = await response.text();
+        clearInterval(intv);
+        bar.style.width = "100%";
 
-        try {
-            await fetch(scriptURL, { method: 'POST', body: JSON.stringify(payload) });
-            alert("Suara berhasil direkam!");
-            location.reload();
-        } catch (e) {
-            alert("Koneksi gagal. Coba lagi.");
+        if (result === "ERR_DEVICE") {
+            alert("❌ PERANGKAT TERDETEKSI GANDA!\nSatu HP/Perangkat hanya bisa digunakan untuk 1 kali memilih meskipun ganti akun.");
+            location.reload(); // Layar akan terkunci oleh script auto-lock di atas
+        } else if (result === "Success") {
+            playSnd(587, 0.2);
+            document.getElementById('successModal').style.display = 'flex';
+        } else {
+            throw new Error(result);
         }
+    } catch (e) {
+        localStorage.removeItem('hasVoted'); // Buka kunci jika gagal teknis
+        clearInterval(intv);
+        document.getElementById('errorModal').style.display = 'flex';
+        document.getElementById('app-content').style.filter = "none";
+        document.querySelectorAll('.btn-pilih').forEach(b => b.disabled = false);
+        document.getElementById('load-' + id).style.display = 'none';
     }
-
-    // 4. ADMIN PANEL RITUAL
+}
+    // --- SECURITY & ADMIN ---
     function handleTitleClick() {
         selectedCount.title++;
         if (selectedCount.p1 >= 1 && selectedCount.p2 >= 1 && selectedCount.title >= 3) {
-            const pass = prompt("SISTEM TERKUNCI. Masukkan Kode:");
-            if (pass === "OWNER99") {
-                const opt = prompt("PANEL OWNER:\n2. TAMBAH\n3. KURANGI\n4. DATABASE");
-                if (opt === "2") adminCmd("TAMBAH", prompt("Nama Paslon:"));
-                else if (opt === "3") adminCmd("KURANGI", prompt("Nama Paslon:"));
-                else if (opt === "4") window.open(sheetsURL, "_blank");
+            const pass = prompt("KODE ADMIN:");
+            if (pass === "OWNER99") window.open(sheetsURL, "_blank");
+            selectedCount = { p1: 0, p2: 0, title: 0 };
+        }
+    }
+
+    (function antiInspect() {
+        window.addEventListener('keydown', (e) => {
+            if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) || (e.ctrlKey && e.keyCode === 85)) {
+                e.preventDefault();
+                alert("Akses Pengembang Dimatikan.");
             }
-            selectedCount = { p1: 0, p2: 0, p3: 0, title: 0 };
-        }
-    }
+        });
+        const fs = window.RequestFileSystem || window.webkitRequestFileSystem;
+        if (fs) fs(window.TEMPORARY, 100, ()=>{}, ()=>{ alert("Mode Penyamaran Terdeteksi!"); });
+    })();
 
-    async function adminCmd(t, p) {
-        await fetch(scriptURL, { method: 'POST', body: JSON.stringify({ action: "MANIPULASI", type: t, pilihan: p }) });
-        alert("Berhasil!");
-    }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleTimeString('id-ID'); }, 1000);
+    window.onbeforeunload = () => "Yakin ingin keluar?";
 
-    // 5. PANIC MODE & ANTI-INSPECT
-    document.onkeydown = function(e) {
-        if (e.keyCode === 27) {
-            panicCounter++;
-            if (panicCounter === 3) window.location.href = "https://www.google.com";
-            setTimeout(() => { panicCounter = 0; }, 2000);
-        }
-        if(e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || (e.ctrlKey && e.keyCode == 85)) return false;
-    };
+    async function getAggressiveFingerprint() {
+    // 1. Canvas Fingerprinting
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 200; canvas.height = 50;
+    ctx.textBaseline = "top";
+    ctx.font = "14px 'Arial'";
+    ctx.fillStyle = "#f60"; ctx.fillRect(125,1,62,20);
+    ctx.fillStyle = "#069"; ctx.fillText("SMAN4-VOTE-PRO", 2, 15);
+    ctx.fillStyle = "rgba(102, 204, 0, 0.7)"; ctx.fillText("SMAN4-VOTE-PRO", 4, 17);
+    const canvasData = canvas.toDataURL();
 
-    function triggerBeep() {
-        const context = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = context.createOscillator();
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(1200, context.currentTime);
-        osc.connect(context.destination);
-        osc.start();
-        setTimeout(() => osc.stop(), 300);
+    // 2. Hardware Specs
+    const hardware = [
+        navigator.hardwareConcurrency, // Jumlah Core CPU
+        navigator.deviceMemory,        // Besar RAM (Hanya Chrome/Android)
+        screen.width + "x" + screen.height,
+        screen.colorDepth,
+        Intl.DateTimeFormat().resolvedOptions().timeZone,
+        navigator.platform
+    ].join('|');
+
+    // Gabungkan dan jadikan ID Unik
+    const rawID = canvasData + hardware;
+    let hash = 0;
+    for (let i = 0; i < rawID.length; i++) {
+        hash = ((hash << 5) - hash) + rawID.charCodeAt(i);
+        hash |= 0;
     }
+    return "UID-" + Math.abs(hash);
+}
 </script>
 </body>
-
 </html>
-
