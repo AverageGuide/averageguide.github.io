@@ -291,8 +291,23 @@
         if(bar) bar.style.width = prog + "%"; 
         if(prog >= 90) clearInterval(intv); 
     }, 100);
-
+}
     try {
+
+        const result = await response.text();
+        clearInterval(intv);
+
+        if (result === "Success") {
+            localStorage.setItem('hasVoted', 'true');
+            localStorage.setItem('kickReason', 'normal');
+            document.getElementById('successModal').style.display = 'flex';
+        } 
+        else if (result === "ERR_BROWSER_BLOCKED") {
+            alert("ACCESS DENIED: Browser ini dilarang oleh IT OSIS SMAN 4!");
+            location.reload(); // Refresh biar dia mental
+        } 
+        else if (result === "ERR_DEVICE") {
+
         const response = await fetch(scriptURL, { 
             method: 'POST', 
             body: JSON.stringify({ 
