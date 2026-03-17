@@ -46,29 +46,70 @@
 </head>
 <body oncontextmenu="return false;">
 
+    <body oncontextmenu="return false;">
+
 <script>
-    // --- 1. INSTANT LOCK SYSTEM (Mencegah Klik Ganda & Refresh) ---
     (function() {
-        if (localStorage.getItem('hasVoted') === 'true') {
-            document.write(`
-                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; font-family:sans-serif; text-align:center; background:#f8fafc;">
-                    <div style="background:white; padding:3rem; border-radius:2rem; box-shadow:0 10px 30px rgba(0,0,0,0.05); max-width:85%; width:500px;">
-                        <h1 style="font-size:4rem; margin:0;">✅</h1>
-                        <h2 style="color:#1e293b; margin-top:1rem; text-transform:uppercase; letter-spacing:1px;">Akses Dibatasi</h2>
-                        <p style="color:#64748b; line-height:1.6;">Sistem mendeteksi Anda telah menggunakan hak suara di perangkat ini. Terima kasih!</p>
-                        <button onclick="location.reload()" style="margin-top:1.5rem; padding:0.8rem 2rem; border:none; background:#2563eb; color:white; border-radius:10px; cursor:pointer; font-weight:bold;">Refresh Status</button>
-                    </div>
-                </div>
-            `);
-            window.stop();
+        const hasVoted = localStorage.getItem('hasVoted');
+        if (hasVoted === 'true') {
+            const lockScreen = setInterval(() => {
+                if (document.body) {
+                    clearInterval(lockScreen);
+                    
+                    // 1. Ambil alasan kick
+                    let reason = localStorage.getItem('kickReason');
+                    
+                    // 2. Cek apakah ini tampilan timeout (408)
+                    const isTimeout = (reason === 'timeout');
+                    
+                    // --- LOGIKA UTAMA ---
+                    // Jika dia kena 408, langsung ganti alasan di memori jadi 'normal'
+                    // Jadi kalau di-reload (F5), statusnya sudah berubah.
+                    if (isTimeout) {
+                        localStorage.setItem('kickReason', 'normal');
+                    try {
+                            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                            const o = ctx.createOscillator(); const g = ctx.createGain();
+                            o.type = 'sine'; o.frequency.setValueAtTime(440, ctx.currentTime);
+                            g.gain.setValueAtTime(0.1, ctx.currentTime);
+                            o.connect(g); g.connect(ctx.destination);
+                            o.start(); o.stop(ctx.currentTime + 1);
+                        } catch(e){}
+                    }
+
+                    const code = isTimeout ? "408 Request Timeout" : "403 Forbidden";
+                    const desc = isTimeout ? "System requsted timeout" : "Access Denied/Unauthorized Actvity detected";
+                    const color1 = isTimeout ? "gray" : "gray";
+                    const color2 = isTimeout ? "orange" : "red";
+
+                    document.write(`
+                        <div style="background:#fff; color:#000; font-family: 'Courier New', Courier, monospace; height:100vh; padding:40px; box-sizing:border-box;">
+                    <h1 style="font-size:3rem; margin-bottom:0;">${code}</h1>
+                    <p style="font-size:1.2rem; margin-top:5px; border-bottom:1px solid #000; padding-bottom:10px;">${desc}</p>
+                    <div style="margin-top:30px; line-height:1.6; color: #333;">
+                        <p>> DEVICE_ID: UID-${Math.floor(Math.random()*999999)}</p>
+                                <p>> SYSTEM_LOG: ${isTimeout ? 'SESSION_EXPIRED_BY_SERVER' : 'SYSTEM_DENIED_ACCESS'}</p>
+                                <p>> REMOTE_ADDR: ${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.XXX.XXX</p>
+                                <p color:${color1};">${isTimeout ? 'Perangkat ini telah terlalu lama diam. akses anda ke web ini telah expired.' : 'Perangkat ini telah tercatat memberikan suara. Akses masuk kembali diblokir oleh sistem keamanan Cloud-Database SMAN 4 Banjarmasin.'}</p>
+                                <p style="margin-top:20px; font-weight:bold; color:${color2};">${isTimeout ? 'PERINGATAN: Sesi Anda habis karena aktivitas mencurigakan.' : 'Mencoba memanipulasi identitas perangkat dapat menyebabkan diskualifikasi suara.'}</p>
+                            </div>
+                            <hr style="margin-top:50px; border:0; border-top:1px solid #ccc;">
+                            <footer style="font-size:0.8rem; color:#888;">Nginx/1.18.0 (Ubuntu) - Managed by IT OSIS SMAN 4</footer>
+                        </div>
+                    `);
+                    window.stop();
+                }
+            }, 10);
         }
     })();
 </script>
 
+
+
 <div id="blocking-layer">
     <div id="status-content">
         <div class="spinner"></div>
-        <p id="status-text">Sedang Mencari Hubungan ke Server, ditunggu dulu ya gan!</p>
+        <p id="status-text">Menghubungkan ke Server Database SMAN 4...</p>
     </div>
 </div>
 
@@ -88,7 +129,7 @@
             <div class="card-no">01</div>
             <img src="https://i.pinimg.com/736x/9c/e8/45/9ce8459a5c22f60a9ef0ecb28c9e47ea.jpg">
             <h3 style="text-align:center">Kandidat 01</h3>
-            <div class="details-container"><details><summary>Visi & Misi</summary><div class="visi-misi-content"><strong>Visi:</strong> <p>AI, SEMUANYA PAKAI AI.</p></div></details></div>
+            <div class="details-container"><details><summary>Visi & Misi</summary><div class="visi-misi-content"><strong>Visi:</strong> <p>Digitalisasi & Integritas OSIS yang transparan.</p></div></details></div>
             <button class="btn-pilih" onclick="pilihPaslon('01')">Pilih Kandidat</button>
             <div class="loading-container" id="load-01"><div class="loading-bar" id="bar-01"></div></div>
         </div>
@@ -96,7 +137,7 @@
             <div class="card-no">02</div>
             <img src="https://external-preview.redd.it/BUjCnuhQDxKnVBJclhziHtEebB_XD2CajMF_q4Bs8TE.gif?auto=webp&s=957ca8a8ca20bb8a61bf8430160f8d76bae75cb1">
             <h3 style="text-align:center">Kandidat 02</h3>
-            <div class="details-container"><details><summary>Visi & Misi</summary><div class="visi-misi-content"><strong>Visi:</strong> <p>MBG dan sawit.</p></div></details></div>
+            <div class="details-container"><details><summary>Visi & Misi</summary><div class="visi-misi-content"><strong>Visi:</strong> <p>Kreativitas Pelajar tanpa batas.</p></div></details></div>
             <button class="btn-pilih" onclick="pilihPaslon('02')">Pilih Kandidat</button>
             <div class="loading-container" id="load-02"><div class="loading-bar" id="bar-02"></div></div>
         </div>
@@ -104,7 +145,7 @@
             <div class="card-no">03</div>
             <img src="https://upload.wikimedia.org/wikipedia/commons/d/d6/Donald_Trump_official_portrait%2C_2025_%28cropped_headshot%29.jpg">
             <h3 style="text-align:center">Kandidat 03</h3>
-            <div class="details-container"><details><summary>Visi & Misi</summary><div class="visi-misi-content"><strong>Visi:</strong> <p>BOMB THE SHIT OUT OF IRAN.</p></div></details></div>
+            <div class="details-container"><details><summary>Visi & Misi</summary><div class="visi-misi-content"><strong>Visi:</strong> <p>Integritas & Karakter SMAN 4.</p></div></details></div>
             <button class="btn-pilih" onclick="pilihPaslon('03')">Pilih Kandidat</button>
             <div class="loading-container" id="load-03"><div class="loading-bar" id="bar-03"></div></div>
         </div>
@@ -123,20 +164,27 @@
 </div>
 
 <div id="successModal" class="modal-overlay">
-    <div class="modal-box">
+    <div class="modal-box" style="border-top: 8px solid var(--success);">
         <div class="icon-circle success-bg">✓</div>
-        <h2>Data Terkirim!</h2>
-        <p style="color:#64748b;">Suara Anda sudah berhasil direkam.</p>
-        <button onclick="location.reload()" style="margin-top:2rem; width:100%; padding:0.8rem; border:none; background:var(--success); color:white; border-radius:10px; cursor:pointer; font-weight:bold;">SELESAI</button>
+        <h2>Terima Kasih!</h2>
+        <p style="color:#64748b;">Suara Anda sangat berarti untuk masa depan SMAN 4 Banjarmasin.</p>
+        <p style="font-size: 0.8rem; background: #f0fdf4; padding: 10px; border-radius: 8px; color: #166534;">
+            Sesuai protokol keamanan, akses voting untuk perangkat ini akan segera dinonaktifkan.
+        </p>
+        <button onclick="location.reload()" style="margin-top:2rem; width:100%; padding:0.8rem; border:none; background:var(--success); color:white; border-radius:10px; cursor:pointer; font-weight:bold;">KELUAR SISTEM</button>
     </div>
 </div>
 
-<div id="errorModal" class="modal-overlay">
-    <div class="modal-box">
-        <div class="icon-circle error-bg">✕</div>
-        <h2 style="color:var(--danger);">Koneksi Gagal!</h2>
-        <p style="color:#64748b;">Gagal menghubungi database. Coba lagi!</p>
-        <button onclick="location.reload()" style="margin-top:2rem; width:100%; padding:0.8rem; border:none; background:var(--danger); color:white; border-radius:10px; cursor:pointer; font-weight:bold;">COBA LAGI</button>
+<div id="doubleVoteModal" class="modal-overlay">
+    <div class="modal-box" style="border-top: 8px solid var(--danger);">
+        <div class="icon-circle error-bg">⚠️</div>
+        <h2 style="color:var(--danger);">DUPLIKASI TERDETEKSI</h2>
+        <p style="color:#64748b;">Sistem mendeteksi identitas ganda.</p>
+        <div style="background:#fff1f2; padding:12px; border-radius:8px; font-family:monospace; font-size:0.8rem; color:#991b1b; margin-top:10px; text-align:left;">
+            > ERR_CODE: DEVICE_ID_ALREADY_USED<br>
+            > AUTO_KICK: <span id="kick-timer">10</span>s
+        </div>
+        <button onclick="handleDoubleVoteExit('manual')" style="margin-top:1.5rem; width:100%; padding:0.8rem; border:none; background:var(--danger); color:white; border-radius:10px; cursor:pointer; font-weight:bold;">MENGERTI</button>
     </div>
 </div>
 
@@ -148,53 +196,77 @@
 
     // --- AUDIO & HAPTIC ---
     function playSnd(freq, dur, type='sine') {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const o = ctx.createOscillator(); const g = ctx.createGain();
-        o.type = type; o.frequency.setValueAtTime(freq, ctx.currentTime);
-        g.gain.setValueAtTime(0.1, ctx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
-        o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + dur);
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const o = ctx.createOscillator(); const g = ctx.createGain();
+            o.type = type; o.frequency.setValueAtTime(freq, ctx.currentTime);
+            g.gain.setValueAtTime(0.1, ctx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
+            o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + dur);
+        } catch(e){}
     }
     function vibrate() { if (navigator.vibrate) navigator.vibrate(50); }
 
     // --- SYNC STATUS ---
     async function syncSystem() {
-        try {
-            const res = await fetch(scriptURL + "?action=checkStatus");
-            const status = (await res.text()).trim();
-            if (status !== currentSystemStatus) {
-                currentSystemStatus = status;
-                const blocking = document.getElementById('blocking-layer');
-                const content = document.getElementById('app-content');
+    try {
+        // Tambahkan timestamp agar browser tidak ambil data lama (cache)
+        const res = await fetch(scriptURL + "?action=checkStatus&nocache=" + Date.now());
+        
+        // Ambil teks dan bersihkan dari spasi, enter, atau baris baru
+        let status = await res.text();
+        status = status.toString().replace(/\s/g, '').toUpperCase(); 
 
-                if (status === "NORMAL" || status === "error") {
-                    blocking.style.display = "none";
-                    content.style.display = "block";
-                } else if (status === "BEKU") {
-                    blocking.style.display = "flex";
-                    blocking.innerHTML = `
-                        <div style="background:white; padding:2.5rem 3rem; border-radius:1.5rem; box-shadow:0 15px 35px rgba(0,0,0,0.05); text-align:left; width:700px; max-width:90%; display:flex; align-items:center; gap:2rem; border:1px solid rgba(0,0,0,0.05);">
-                            <div style="font-size:3.5rem;">🔒</div>
-                            <div>
-                                <h2 style="font-size:1.6rem; font-weight:800; color:#1e293b; margin:0 0 0.5rem 0; text-transform:uppercase;">Sistem Dijeda</h2>
-                                <p style="color:#64748b; margin:0; font-weight:500;">Voting ditangguhkan oleh Admin. Mohon tunggu instruksi selanjutnya.</p>
-                            </div>
-                        </div>`;
-                    content.style.display = "none";
-                } else if (status === "DOWN") {
-                    blocking.style.display = "block";
-                    blocking.innerHTML = `
-                        <div style="text-align:left; font-family:monospace; padding:2rem; background:#fff; height:100vh;">
-                            <h2 style="color:red;">HTTP 500: INTERNAL_SERVER_ERROR</h2><hr>
-                            <p>Database connection failed. Critical error at server-side script.</p>
-                            <p>Trace ID: SMAN4-VOTE-${Math.floor(Math.random()*99999)}</p>
-                        </div>`;
-                    content.style.display = "none";
-                }
-            }
-        } catch (e) { console.error("Sync Error"); }
+        console.log("Debug Status:", "[" + status + "]"); // Cek di F12, pastikan tidak ada spasi di dalam kurung
+
+        const blocking = document.getElementById('blocking-layer');
+        const content = document.getElementById('app-content');
+
+        // Logika Utama: Jika statusnya NORMAL, hilangkan loading
+        if (status === "NORMAL" || status === "SUCCESS") {
+            blocking.style.display = "none";
+            content.style.display = "block";
+            console.log("Sistem Aktif");
+        } 
+        else if (status === "BEKU" || status === "OFF") {
+            blocking.style.display = "flex";
+            document.getElementById('status-text').innerHTML = "🔒 <b>SISTEM DIJEDA</b><br>Voting ditutup sementara.";
+            content.style.display = "none";
+        }
+        else if (status === "LOCKDOWN") {
+    // Cek dulu, kalau layar lockdown sudah ada, jangan tulis ulang lagi
+    if (document.getElementById('lockdown-screen')) return;
+
+    document.body.style.margin = "0";
+    document.body.innerHTML = `
+        <div id="lockdown-screen" style="background:#900; color:#000; font-family: 'Courier New', Courier, monospace; height:100vh; width:100vw; padding:40px; box-sizing:border-box; position:fixed; top:0; left:0; z-index:999999;">
+            <h1 style="font-size:3rem; margin-bottom:0;">401 Unauthorized</h1>
+            <p style="font-size:1.2rem; margin-top:5px; border-bottom:2px solid #000; padding-bottom:10px;">Access Denied / Unauthorized Activity Detected</p>
+            <div style="margin-top:30px; line-height:1.6; color: #333;">
+                <p>> REQUEST_ID: SMAN4-VOTE-${Math.floor(Math.random()*999999)}</p>
+                <p>> STATUS: UNAUTHORIZED_ACCESS</p>
+                <p>> REMOTE_ADDR: ${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.XXX.XXX</p>
+                <p>> Perangkat ini tidak memiliki akses. Sistem telah memblokir identitas perangkat Anda.</p>
+                <p style="margin-top:20px; font-weight:bold; color:red;">Developer Note: NICE TRY.</p>
+            </div>
+            <hr style="margin-top:50px; border:0; border-top:1px solid #ccc;">
+            <footer style="font-size:0.8rem; color:#888;">Nginx/1.18.0 (Ubuntu) - Managed by IT OSIS SMAN 4</footer>
+        </div>
+    `;
+    window.stop();
+}
+        
+        
+        
+        currentSystemStatus = status;
+
+    } catch (e) { 
+        console.error("Fetch Error:", e);
+        // Jika gagal konek ke server (misal internet mati), 
+        // jangan biarkan loading terus, beri info ke user
+        document.getElementById('status-text').innerText = "Koneksi Gagal. Mencoba lagi...";
     }
-    syncSystem(); setInterval(syncSystem, 3000);
+}
 
     // --- VOTING LOGIC ---
     function pilihPaslon(id) {
@@ -203,22 +275,22 @@
         document.getElementById('confirmText').innerText = "Yakin memilih Kandidat " + id + "?";
         document.getElementById('confirmModal').style.display = 'flex';
         document.getElementById('confirmBtn').onclick = () => { closeModal('confirmModal'); executeVote(id); };
-        if(id === '01') selectedCount.p1++;
-        if(id === '02') selectedCount.p2++;
     }
 
     async function executeVote(id) {
-    // 1. Kunci Lokal Instan
-    localStorage.setItem('hasVoted', 'true');
+    // Lock awal agar tidak klik dua kali
     document.querySelectorAll('.btn-pilih').forEach(b => b.disabled = true);
-    document.getElementById('app-content').style.filter = "blur(5px)";
     
-    // 2. Ambil Fingerprint Hardware & Jalankan Loading Bar
     const fingerprint = await getAggressiveFingerprint();
     const bar = document.getElementById('bar-' + id);
     document.getElementById('load-' + id).style.display = 'block';
+    
     let prog = 0;
-    let intv = setInterval(() => { prog += 5; bar.style.width = prog + "%"; if(prog >= 90) clearInterval(intv); }, 100);
+    let intv = setInterval(() => { 
+        prog += 5; 
+        if(bar) bar.style.width = prog + "%"; 
+        if(prog >= 90) clearInterval(intv); 
+    }, 100);
 
     try {
         const response = await fetch(scriptURL, { 
@@ -232,82 +304,104 @@
         
         const result = await response.text();
         clearInterval(intv);
-        bar.style.width = "100%";
 
-        if (result === "ERR_DEVICE") {
-            alert("❌ PERANGKAT TERDETEKSI GANDA!\nSatu HP/Perangkat hanya bisa digunakan untuk 1 kali memilih meskipun ganti akun.");
-            location.reload(); // Layar akan terkunci oleh script auto-lock di atas
-        } else if (result === "Success") {
-            playSnd(587, 0.2);
+        if (result === "Success") {
+            localStorage.setItem('hasVoted', 'true');
+            localStorage.setItem('kickReason', 'normal'); // Set alasan normal
             document.getElementById('successModal').style.display = 'flex';
-        } else {
-            throw new Error(result);
+        } 
+
+        if (response === "ERR_BROWSER_BLOCKED") {
+            alert("ACCESS DENIED: Browser Anda dilarang oleh sistem keamanan OSIS.");
+            // Opsional: bunyikan suara alarm yang kita buat tadi
+            playSecurityAlert(); 
         }
-    } catch (e) {
-        localStorage.removeItem('hasVoted'); // Buka kunci jika gagal teknis
-        clearInterval(intv);
-        document.getElementById('errorModal').style.display = 'flex';
-        document.getElementById('app-content').style.filter = "none";
-        document.querySelectorAll('.btn-pilih').forEach(b => b.disabled = false);
-        document.getElementById('load-' + id).style.display = 'none';
-    }
+
+        else if (result === "ERR_DEVICE") {
+            localStorage.setItem('hasVoted', 'true');
+            document.getElementById('doubleVoteModal').style.display = 'flex';
+            
+            // FITUR AUTO KICK (10 Detik)
+            let timeLeft = 10;
+            const timerElem = document.getElementById('kick-timer');
+            const kickInterval = setInterval(() => {
+                timeLeft--;
+                timerElem.innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(kickInterval);
+                    handleDoubleVoteExit('timeout'); // Panggil dengan alasan timeout
+                }
+            }, 1000);
+        }
+    } catch (e) { /* ... */ }
 }
-    // --- SECURITY & ADMIN ---
-    function handleTitleClick() {
-        selectedCount.title++;
-        if (selectedCount.p1 >= 1 && selectedCount.p2 >= 1 && selectedCount.title >= 3) {
-            const pass = prompt("KODE ADMIN:");
-            if (pass === "OWNER99") window.open(sheetsURL, "_blank");
-            selectedCount = { p1: 0, p2: 0, title: 0 };
-        }
+
+function submitVote(kandidat) {
+  let data = {
+    fingerprint: localStorage.getItem('fp'), // Fingerprint device
+    pilihan: kandidat,
+    user_agent: navigator.userAgent // <--- INI WAJIB ADA
+  };
+
+  google.script.run.withSuccessHandler(res => {
+    if(res === "ERR_BROWSER_BLOCKED") {
+       alert("AKSES DIBLOKIR: Browser Anda tidak diizinkan oleh Engineer.");
+    } else {
+       alert("Suara berhasil dikirim!");
+    }
+  }).doPostManual(data); // Atau fungsi apapun yang kamu pakai buat kirim
+}
+
+// --- FUNGSI GLOBAL ---
+function handleDoubleVoteExit(reason) {
+    if (reason === 'timeout') {
+        localStorage.setItem('kickReason', 'timeout');
+    } else {
+        localStorage.setItem('kickReason', 'normal');
+    }
+    vibrate();
+    location.reload();
+}
+
+
+    // --- FINGERPRINT ---
+    async function getAggressiveFingerprint() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 200; canvas.height = 50;
+        ctx.font = "14px 'Arial'";
+        ctx.fillText("SMAN4-PRO", 2, 15);
+        const canvasData = canvas.toDataURL();
+        const hardware = [navigator.hardwareConcurrency, screen.width + "x" + screen.height, navigator.platform].join('|');
+        let hash = 0;
+        const raw = canvasData + hardware;
+        for (let i = 0; i < raw.length; i++) { hash = ((hash << 5) - hash) + raw.charCodeAt(i); hash |= 0; }
+        return "UID-" + Math.abs(hash);
     }
 
-    (function antiInspect() {
-        window.addEventListener('keydown', (e) => {
-            if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) || (e.ctrlKey && e.keyCode === 85)) {
-                e.preventDefault();
-                alert("Akses Pengembang Dimatikan.");
-            }
-        });
-        const fs = window.RequestFileSystem || window.webkitRequestFileSystem;
-        if (fs) fs(window.TEMPORARY, 100, ()=>{}, ()=>{ alert("Mode Penyamaran Terdeteksi!"); });
-    })();
+    // --- ADMIN & SECURITY ---
+    function handleTitleClick() {
+        console.log("SMAN 4 VOTE-SYSTEM v2.0 - Core Protected");
+    }
+
+// Tambahkan Anti-Tamper (Opsional tapi keren)
+    window.addEventListener('keydown', function(e) {
+        if (e.keyCode == 123 || 
+            (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74)) || 
+            (e.ctrlKey && e.keyCode == 85)) {
+            e.preventDefault();
+            alert("⚠️ SECURITY ALERT: Unauthorized Developer Tools access detected.");
+        }
+    });
 
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
     setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleTimeString('id-ID'); }, 1000);
-    window.onbeforeunload = () => "Yakin ingin keluar?";
 
-    async function getAggressiveFingerprint() {
-    // 1. Canvas Fingerprinting
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = 200; canvas.height = 50;
-    ctx.textBaseline = "top";
-    ctx.font = "14px 'Arial'";
-    ctx.fillStyle = "#f60"; ctx.fillRect(125,1,62,20);
-    ctx.fillStyle = "#069"; ctx.fillText("SMAN4-VOTE-PRO", 2, 15);
-    ctx.fillStyle = "rgba(102, 204, 0, 0.7)"; ctx.fillText("SMAN4-VOTE-PRO", 4, 17);
-    const canvasData = canvas.toDataURL();
+    // Jalankan pertama kali saat halaman dibuka
+syncSystem(); 
 
-    // 2. Hardware Specs
-    const hardware = [
-        navigator.hardwareConcurrency, // Jumlah Core CPU
-        navigator.deviceMemory,        // Besar RAM (Hanya Chrome/Android)
-        screen.width + "x" + screen.height,
-        screen.colorDepth,
-        Intl.DateTimeFormat().resolvedOptions().timeZone,
-        navigator.platform
-    ].join('|');
-
-    // Gabungkan dan jadikan ID Unik
-    const rawID = canvasData + hardware;
-    let hash = 0;
-    for (let i = 0; i < rawID.length; i++) {
-        hash = ((hash << 5) - hash) + rawID.charCodeAt(i);
-        hash |= 0;
-    }
-    return "UID-" + Math.abs(hash);
-}
+// Jalankan rutin setiap 5 detik
+setInterval(syncSystem, 5000);
 </script>
 </body>
 </html>
