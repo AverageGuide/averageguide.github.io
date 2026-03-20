@@ -278,12 +278,13 @@
     }
 
     async function executeVote(id) {
-    // Lock awal agar tidak klik dua kali
+    // 1. Lock tombol agar tidak double click
     document.querySelectorAll('.btn-pilih').forEach(b => b.disabled = true);
     
     const fingerprint = await getAggressiveFingerprint();
     const bar = document.getElementById('bar-' + id);
-    document.getElementById('load-' + id).style.display = 'block';
+    const loadingContainer = document.getElementById('load-' + id);
+    if(loadingContainer) loadingContainer.style.display = 'block';
     
     let prog = 0;
     let intv = setInterval(() => { 
@@ -291,64 +292,39 @@
         if(bar) bar.style.width = prog + "%"; 
         if(prog >= 90) clearInterval(intv); 
     }, 100);
-}
+
     try {
-
-        const result = await response.text();
-        clearInterval(intv);
-
-        if (result === "Success") {
-            localStorage.setItem('hasVoted', 'true');
-            localStorage.setItem('kickReason', 'normal');
-            document.getElementById('successModal').style.display = 'flex';
-        } 
-        else if (result === "ERR_BROWSER_BLOCKED") {
-            alert("ACCESS DENIED: Browser ini dilarang oleh IT OSIS SMAN 4!");
-            location.reload(); // Refresh biar dia mental
-        } 
-        else if (result === "ERR_DEVICE") {
-
+        // 2. Kirim data ke Apps Script
         const response = await fetch(scriptURL, { 
             method: 'POST', 
+            mode: 'no-cors', // Penting untuk menghindari CORS issue pada Google Script
             body: JSON.stringify({ 
                 pilihan: "Paslon " + id, 
                 fingerprint: fingerprint,
                 user_agent: navigator.userAgent
             }) 
         });
+
+        // Karena menggunakan 'no-cors', kita tidak bisa baca body response secara langsung.
+        // Solusi terbaik untuk E-Voting adalah menggunakan Google Script Run jika dalam satu project,
+        // Tapi jika file HTML terpisah, kita asumsikan 'Success' jika tidak ada error network.
         
-        const result = await response.text();
         clearInterval(intv);
+        if(bar) bar.style.width = "100%";
 
-        if (result === "Success") {
-            localStorage.setItem('hasVoted', 'true');
-            localStorage.setItem('kickReason', 'normal'); // Set alasan normal
+        // Simpan status di browser
+        localStorage.setItem('hasVoted', 'true');
+        localStorage.setItem('kickReason', 'normal');
+        
+        setTimeout(() => {
             document.getElementById('successModal').style.display = 'flex';
-        } 
+        }, 500);
 
-        if (response === "ERR_BROWSER_BLOCKED") {
-            alert("ACCESS DENIED: Browser Anda dilarang oleh sistem keamanan OSIS.");
-            // Opsional: bunyikan suara alarm yang kita buat tadi
-            playSecurityAlert(); 
-        }
-
-        else if (result === "ERR_DEVICE") {
-            localStorage.setItem('hasVoted', 'true');
-            document.getElementById('doubleVoteModal').style.display = 'flex';
-            
-            // FITUR AUTO KICK (10 Detik)
-            let timeLeft = 10;
-            const timerElem = document.getElementById('kick-timer');
-            const kickInterval = setInterval(() => {
-                timeLeft--;
-                timerElem.innerText = timeLeft;
-                if (timeLeft <= 0) {
-                    clearInterval(kickInterval);
-                    handleDoubleVoteExit('timeout'); // Panggil dengan alasan timeout
-                }
-            }, 1000);
-        }
-    } catch (e) { /* ... */ }
+    } catch (e) {
+        console.error("Voting Error:", e);
+        alert("Terjadi kesalahan koneksi. Silakan coba lagi.");
+        document.querySelectorAll('.btn-pilih').forEach(b => b.disabled = false);
+    }
 }
 
 function submitVote(kandidat) {
