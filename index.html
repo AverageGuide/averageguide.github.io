@@ -278,52 +278,57 @@
     }
 
     async function executeVote(id) {
-    // 1. Lock tombol agar tidak double click
-    document.querySelectorAll('.btn-pilih').forEach(b => b.disabled = true);
+    // 1. Kunci tombol agar tidak spam klik
+    const buttons = document.querySelectorAll('.btn-pilih');
+    buttons.forEach(b => b.disabled = true);
     
+    // 2. Ambil Identitas Perangkat & Progress Bar
     const fingerprint = await getAggressiveFingerprint();
     const bar = document.getElementById('bar-' + id);
-    const loadingContainer = document.getElementById('load-' + id);
-    if(loadingContainer) loadingContainer.style.display = 'block';
+    const loadContainer = document.getElementById('load-' + id);
+    if(loadContainer) loadContainer.style.display = 'block';
     
+    // Animasi Progress Bar Palsu (Visual)
     let prog = 0;
     let intv = setInterval(() => { 
-        prog += 5; 
+        prog += 10; 
         if(bar) bar.style.width = prog + "%"; 
         if(prog >= 90) clearInterval(intv); 
-    }, 100);
+    }, 50);
 
     try {
-        // 2. Kirim data ke Apps Script
-        const response = await fetch(scriptURL, { 
-            method: 'POST', 
-            mode: 'no-cors', // Penting untuk menghindari CORS issue pada Google Script
+        // 3. KIRIM DATA KE GOOGLE APPS SCRIPT
+        const response = await fetch(scriptURL, {
+            method: 'POST',
+            mode: 'no-cors', // Penting agar tidak kena blokir CORS browser
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 pilihan: "Paslon " + id, 
                 fingerprint: fingerprint,
                 user_agent: navigator.userAgent
-            }) 
+            })
         });
 
-        // Karena menggunakan 'no-cors', kita tidak bisa baca body response secara langsung.
-        // Solusi terbaik untuk E-Voting adalah menggunakan Google Script Run jika dalam satu project,
-        // Tapi jika file HTML terpisah, kita asumsikan 'Success' jika tidak ada error network.
+        // Karena menggunakan 'no-cors', kita tidak bisa baca respon "Success" secara langsung,
+        // tapi jika fetch tidak masuk ke 'catch', artinya data sudah terkirim ke server Google.
         
         clearInterval(intv);
         if(bar) bar.style.width = "100%";
 
-        // Simpan status di browser
+        // 4. Simpan status di browser agar tidak bisa nyoblos lagi
         localStorage.setItem('hasVoted', 'true');
         localStorage.setItem('kickReason', 'normal');
-        
+
+        // Tampilkan Modal Berhasil
         setTimeout(() => {
             document.getElementById('successModal').style.display = 'flex';
-        }, 500);
+        }, 800);
 
     } catch (e) {
-        console.error("Voting Error:", e);
-        alert("Terjadi kesalahan koneksi. Silakan coba lagi.");
-        document.querySelectorAll('.btn-pilih').forEach(b => b.disabled = false);
+        console.error("Gagal mengirim suara:", e);
+        alert("Koneksi gagal! Pastikan internet aktif dan coba lagi.");
+        buttons.forEach(b => b.disabled = false);
+        if(loadContainer) loadContainer.style.display = 'none';
     }
 }
 
