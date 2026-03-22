@@ -56,18 +56,19 @@
                 if (document.body) {
                     clearInterval(lockScreen);
                     
-                    // 1. Ambil alasan kick
+                    // --- PERBAIKAN DI SINI ---
+                    // Ambil alasan dari 'kickReason', bukan 'hasVoted'
                     let reason = localStorage.getItem('kickReason');
                     
-                    // 2. Cek apakah ini tampilan timeout (408)
                     const isTimeout = (reason === 'timeout');
+                    const isInternalError = (reason === 'error500');
+                    // Jika tidak ada reason atau reason 'forbidden', anggap 403
+                    const isForbidden = (reason === 'forbidden' || !reason || reason === 'normal');
                     
-                    // --- LOGIKA UTAMA ---
-                    // Jika dia kena 408, langsung ganti alasan di memori jadi 'normal'
-                    // Jadi kalau di-reload (F5), statusnya sudah berubah.
                     if (isTimeout) {
-                        localStorage.setItem('kickReason', 'normal');
-                    try {
+                        // Reset ke normal agar jika di-F5 manual kembali ke 403
+                        localStorage.setItem('kickReason', 'forbidden');
+                        try {
                             const ctx = new (window.AudioContext || window.webkitAudioContext)();
                             const o = ctx.createOscillator(); const g = ctx.createGain();
                             o.type = 'sine'; o.frequency.setValueAtTime(440, ctx.currentTime);
@@ -77,21 +78,20 @@
                         } catch(e){}
                     }
 
-                    const code = isTimeout ? "408 Request Timeout" : "403 Forbidden";
-                    const desc = isTimeout ? "System requsted timeout" : "Access Denied/Unauthorized Actvity detected";
-                    const color1 = isTimeout ? "gray" : "gray";
-                    const color2 = isTimeout ? "orange" : "red";
+                    const code = isTimeout ? "408 Request Timeout" : (isInternalError ? "500 Internal Server Error" : "403 Forbidden");
+                    const desc = isTimeout ? "System requested timeout" : (isInternalError ? "Server Database Connection Failed" : "Access Denied/Unauthorized Activity detected");
+                    const color2 = isTimeout ? "orange" : (isInternalError ? "#900" : "red");
 
                     document.write(`
                         <div style="background:#fff; color:#000; font-family: 'Courier New', Courier, monospace; height:100vh; padding:40px; box-sizing:border-box;">
-                    <h1 style="font-size:3rem; margin-bottom:0;">${code}</h1>
-                    <p style="font-size:1.2rem; margin-top:5px; border-bottom:1px solid #000; padding-bottom:10px;">${desc}</p>
-                    <div style="margin-top:30px; line-height:1.6; color: #333;">
-                        <p>> DEVICE_ID: UID-${Math.floor(Math.random()*999999)}</p>
+                            <h1 style="font-size:3rem; margin-bottom:0;">${code}</h1>
+                            <p style="font-size:1.2rem; margin-top:5px; border-bottom:1px solid #000; padding-bottom:10px;">${desc}</p>
+                            <div style="margin-top:30px; line-height:1.6; color: #333;">
+                                <p>> DEVICE_ID: UID-${Math.floor(Math.random()*999999)}</p>
                                 <p>> SYSTEM_LOG: ${isTimeout ? 'SESSION_EXPIRED_BY_SERVER' : 'SYSTEM_DENIED_ACCESS'}</p>
                                 <p>> REMOTE_ADDR: ${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.XXX.XXX</p>
-                                <p color:${color1};">${isTimeout ? 'Perangkat ini telah terlalu lama diam. akses anda ke web ini telah expired.' : 'Perangkat ini telah tercatat memberikan suara. Akses masuk kembali diblokir oleh sistem keamanan Cloud-Database SMAN 4 Banjarmasin.'}</p>
-                                <p style="margin-top:20px; font-weight:bold; color:${color2};">${isTimeout ? 'PERINGATAN: Sesi Anda habis karena aktivitas mencurigakan.' : 'Mencoba memanipulasi identitas perangkat dapat menyebabkan diskualifikasi suara.'}</p>
+                                <p>${isTimeout ? 'Perangkat ini telah terlalu lama diam. Akses Anda ke web ini telah expired.' : (isInternalError ? 'Gagal melakukan sinkronisasi dengan Cloud-Database SMAN 4. Terdeteksi gangguan pada jabat tangan (handshake) server.' : 'Perangkat ini telah tercatat memberikan suara. Akses masuk kembali diblokir oleh sistem keamanan Cloud-Database SMAN 4 Banjarmasin.')}</p>
+                                <p style="margin-top:20px; font-weight:bold; color:${color2};">${isTimeout ? 'PERINGATAN: Sesi Anda habis karena aktivitas mencurigakan.' : (isInternalError ? 'TINDAKAN: Periksa koneksi internet atau hubungi Admin IT OSIS.' : 'Mencoba memanipulasi identitas perangkat dapat menyebabkan diskualifikasi suara.')}</p>
                             </div>
                             <hr style="margin-top:50px; border:0; border-top:1px solid #ccc;">
                             <footer style="font-size:0.8rem; color:#888;">Nginx/1.18.0 (Ubuntu) - Managed by IT OSIS SMAN 4</footer>
@@ -188,6 +188,19 @@
     </div>
 </div>
 
+<div id="connectionLostModal" class="modal-overlay">
+    <div class="modal-box" style="border-top: 8px solid #64748b;">
+        <div class="icon-circle" style="background: #f1f5f9; color: #64748b;">🌐</div>
+        <h2 style="color:#1e293b;">KONEKSI TERPUTUS</h2>
+        <p style="color:#64748b;">Gagal menghubungi Server Database SMAN 4 Banjarmasin.</p>
+        <div style="background:#f8fafc; padding:12px; border-radius:8px; font-family:monospace; font-size:0.8rem; color:#475569; margin-top:10px; text-align:left;">
+            > STATUS: OFFLINE / TIMEOUT<br>
+            > ACTION: RE-ESTABLISH CONNECTION
+        </div>
+        <button onclick="handleConnectionError()" style="margin-top:1.5rem; width:100%; padding:0.8rem; border:none; background:#475569; color:white; border-radius:10px; cursor:pointer; font-weight:bold;">MUAT ULANG SISTEM</button>
+    </div>
+</div>
+
 <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbzD3zmoaQJBslJAKmC3uFBXtWGbV9WNAYlyzljG9WO7mpDcAAXqRazPZ-ugFXPlFlHo0Q/exec';
     const sheetsURL = 'https://docs.google.com/spreadsheets/d/1qMtdvUy0jW1M9kgo4LCiuVN80rIKMi72kPWLaIRokLM/edit';
@@ -278,29 +291,41 @@
     }
 
     async function executeVote(id) {
-    // 1. Kunci tombol agar tidak spam klik
     const buttons = document.querySelectorAll('.btn-pilih');
     buttons.forEach(b => b.disabled = true);
     
-    // 2. Ambil Identitas Perangkat & Progress Bar
     const fingerprint = await getAggressiveFingerprint();
     const bar = document.getElementById('bar-' + id);
     const loadContainer = document.getElementById('load-' + id);
     if(loadContainer) loadContainer.style.display = 'block';
     
-    // Animasi Progress Bar Palsu (Visual)
     let prog = 0;
     let intv = setInterval(() => { 
-        prog += 10; 
+        prog += 5; 
         if(bar) bar.style.width = prog + "%"; 
-        if(prog >= 90) clearInterval(intv); 
+        if(prog >= 50) clearInterval(intv); 
     }, 50);
 
     try {
-        // 3. KIRIM DATA KE GOOGLE APPS SCRIPT
-        const response = await fetch(scriptURL, {
+        // --- TAHAP 1: CEK DUPLIKASI SECARA REAL-TIME ---
+        // Kita pakai mode GET karena lebih aman dari blokir CORS untuk baca data
+        const checkRes = await fetch(scriptURL + "?action=checkUID&uid=" + fingerprint + "&nocache=" + Date.now());
+        const checkStatus = await checkRes.text();
+
+        if (checkStatus.trim() === "EXISTS") {
+            clearInterval(intv);
+            if(bar) bar.style.width = "0%";
+            if(loadContainer) loadContainer.style.display = 'none';
+            
+            // Tampilkan modal Duplikasi yang sudah kamu buat
+            showDoubleVoteModal();
+            return; 
+        }
+
+        // --- TAHAP 2: KIRIM SUARA (Jika UID belum ada) ---
+        await fetch(scriptURL, {
             method: 'POST',
-            mode: 'no-cors', // Penting agar tidak kena blokir CORS browser
+            mode: 'no-cors',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 pilihan: "Paslon " + id, 
@@ -309,27 +334,60 @@
             })
         });
 
-        // Karena menggunakan 'no-cors', kita tidak bisa baca respon "Success" secara langsung,
-        // tapi jika fetch tidak masuk ke 'catch', artinya data sudah terkirim ke server Google.
-        
-        clearInterval(intv);
-        if(bar) bar.style.width = "100%";
-
-        // 4. Simpan status di browser agar tidak bisa nyoblos lagi
-        localStorage.setItem('hasVoted', 'true');
-        localStorage.setItem('kickReason', 'normal');
-
-        // Tampilkan Modal Berhasil
-        setTimeout(() => {
-            document.getElementById('successModal').style.display = 'flex';
-        }, 800);
+        // Selesaikan animasi bar
+        let finalProg = 50;
+        let finalIntv = setInterval(() => {
+            finalProg += 10;
+            if(bar) bar.style.width = finalProg + "%";
+            if(finalProg >= 100) {
+                clearInterval(finalIntv);
+                localStorage.setItem('hasVoted', 'true');
+                localStorage.setItem('kickReason', 'normal');
+                document.getElementById('successModal').style.display = 'flex';
+            }
+        }, 30);
 
     } catch (e) {
-        console.error("Gagal mengirim suara:", e);
-        alert("Koneksi gagal! Pastikan internet aktif dan coba lagi.");
-        buttons.forEach(b => b.disabled = false);
-        if(loadContainer) loadContainer.style.display = 'none';
+    console.error("Gagal:", e);
+    // Tutup bar loading jika ada
+    if(loadContainer) loadContainer.style.display = 'none';
+    buttons.forEach(b => b.disabled = false);
+    
+    // Tampilkan modal koneksi terputus yang baru
+    document.getElementById('connectionLostModal').style.display = 'flex';
+}
+
+    // Tambahkan fungsi handler ini di bagian bawah script
+    function handleConnectionError() {
+        // Set status agar pas refresh jadi error 500
+        localStorage.setItem('hasVoted', 'true'); // Kunci layar
+        localStorage.setItem('kickReason', 'error500');
+        vibrate();
+        location.reload();
     }
+}
+
+
+// Fungsi pembantu untuk memunculkan modal duplikasi
+function showDoubleVoteModal() {
+    const modal = document.getElementById('doubleVoteModal');
+    modal.style.display = 'flex';
+    let timeLeft = 10;
+    const timerDisplay = document.getElementById('kick-timer');
+    
+    const countdown = setInterval(() => {
+        timeLeft--;
+        if(timerDisplay) timerDisplay.innerText = timeLeft;
+        
+        if(timeLeft <= 0) {
+            clearInterval(countdown);
+            // JIKA WAKTU HABIS -> KIRIM KE 408 (Timeout)
+            handleDoubleVoteExit('timeout');
+        }
+    }, 1000);
+
+    // Simpan interval ke window agar bisa dihentikan jika tombol diklik manual
+    window.activeCountdown = countdown;
 }
 
 function submitVote(kandidat) {
@@ -350,13 +408,20 @@ function submitVote(kandidat) {
 
 // --- FUNGSI GLOBAL ---
 function handleDoubleVoteExit(reason) {
+    if (window.activeCountdown) clearInterval(window.activeCountdown);
+    
+    // 1. Kunci akses
+    localStorage.setItem('hasVoted', 'true');
+    
+    // 2. Tentukan jalur error
     if (reason === 'timeout') {
         localStorage.setItem('kickReason', 'timeout');
     } else {
-        localStorage.setItem('kickReason', 'normal');
+        localStorage.setItem('kickReason', 'forbidden');
     }
+    
     vibrate();
-    location.reload();
+    location.reload(); 
 }
 
 
